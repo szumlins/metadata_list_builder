@@ -8,11 +8,11 @@ import re
 
 #command line argument parsing
 parser = argparse.ArgumentParser(description='Batch update values in Portal metadata fields')
-parser.add_argument('-u','--username',dest='username',metavar="STRING",type=str,help="Portal username, uses \"admin\" if not set",default="admin")
-parser.add_argument('-p','--password',dest='password',metavar="STRING",type=str,help="Portal password",required=True)
+parser.add_argument('-u','--username',dest='username',metavar="USERNAME",type=str,help="Portal username, uses \"admin\" if not set",default="admin")
+parser.add_argument('-p','--password',dest='password',metavar="PASSWORD",type=str,help="Portal password",required=True)
 parser.add_argument('-a','--address',dest='address',metavar="ADDRESS",type=str,help="IP Address or DNS name of Portal server",required=True)
-parser.add_argument('-f','--field',dest='field',metavar="STRING",help="Portal metadata field",required=True)
-parser.add_argument('-i','--input file',metavar="FILE",dest='input_file',help="Key/Value input file (line delimited values or csv key/value pairs)",required=True)
+parser.add_argument('-f','--field',dest='field',metavar="FIELD",help="Portal metadata field",required=True)
+parser.add_argument('-i','--input-file',metavar="FILE_PATH",dest='input_file',help="Key/Value input file (line delimited values or csv key/value pairs)",required=True)
 cli_args = parser.parse_args()
 
 #format our URL as a shortcut
