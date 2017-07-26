@@ -43,28 +43,36 @@ metadata_list_builder.py [-h] [-u USERNAME] -p PASSWORD -a ADDRESS -f
 
 The input files can be a simple list of values:
 
-```value 1
+```
+value 1
 value 2
-value 3```
+value 3
+```
 
 In this case, the keys will be slugified versions of the values, so `value-1 , value 1`.
 
 It can be a CSV file with two columns:
 
-```key1,value 1
+```
+key1,value 1
 key2,value 2
-key3,value 3```
+key3,value 3
+```
 
 or 
 
-```"key1","value 1"
+```
+"key1","value 1"
 "key2","value 2"
-"key3","value 3"```
+"key3","value 3"
+```
 
 This will also slugify keys but leave values intact.
 
 Or it can be a mix of both:
 
-```value 1
+```
+value 1
 key2, value 2
-"key 3","value 3"```
+"key 3","value 3"
+```
