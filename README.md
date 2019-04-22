@@ -4,8 +4,8 @@ This script can populate or update the values in Portal metadata fields with "ch
 
 ## Prerequisites
 
-  - Cantemo Portal
-  - Python
+  - Cantemo Portal or iconik
+  - Python 3.x
   - requests
 
 ## Installing
@@ -19,12 +19,19 @@ pip install -r requirements.txt
 
 ## Usage
 
+There are now separate scripts for Portal and iconik.  They have different syntax.
+
+Cantemo Portal
 ```
-metadata_list_builder.py [-h] [-u USERNAME] -p PASSWORD -a ADDRESS -f
-                                FIELD -i FILE_PATH
+portal_metadata_list_builder.py [-h] [-u USERNAME] -p PASSWORD -a ADDRESS -f FIELD -i FILE_PATH
+```
+iconik
+```
+iconik_metadata_list_builder.py [-h] -u appId -s Auth Token -f FIELD [-a ADDRESS] -i FILE_PATH
 ```
 
-### Options overview
+
+### Portal Options overview
 
 | short flag | long flag | description |
 | ------ | ------ | ------ |
@@ -35,10 +42,21 @@ metadata_list_builder.py [-h] [-u USERNAME] -p PASSWORD -a ADDRESS -f
 |  `-f <FIELD>` | `--field <FIELD>` | Portal metadata field |
 |  `-i <FILE_PATH>` | `--input-file <PATH>` | Key/Value input file (line delimited values or csv key/value pairs)|
 
+### iconik options overview
+
+| short flag | long flag | description |
+| ------ | ------ | ------ |
+|  `-h` | `--help`  | show this help message and exit |
+|  `-u <App ID>` | `--appId <App ID>` | iconik appId that is allowed to edit your metadata field |
+|  `-s <Auth Token>` | `--authToken <PASSWORD>` | iconik Auth Token that is allowed to edit your metadata field |
+|  `-a <ADDRESS>` | `--address <ADDRESS>` | iconik URL (default is https://app.iconik.io). Not required for public iconik |
+|  `-f <FIELD>` | `--field <FIELD>` | iconik metadata field key |
+|  `-i <FILE_PATH>` | `--input-file <PATH>` | Key/Value input file (line delimited values or csv key/value pairs)|
+
 ### Example Syntax
 
-`python ./metadata_list_builder.py -p password -a 192.168.10.10 -i ~/Desktop/listfile.txt -f portal_mf257027`
-
+`python ./portal_metadata_list_builder.py -p password -a 192.168.10.10 -i ~/Desktop/listfile.txt -f portal_mf257027`
+`python ./iconik_metadata_list_builder.py -u 28de8d18-f6ed-11e7-817e-0a680a3c0121 -s eyJhbGciOiJIUzI1NiIsImlhdCI6MTUxNjM3NDc1MiwiZXhwIjozMDkzMTc0FlNy04Yzk3LTBhNTgwYTNjMDEyYSJ9.OEPy3_vJMeauW1EngQEBz3pWxQUpWvpte7Z6QozUs_w  -i ~/Desktop/listfile.txt -f Departments`
 ### Input file Syntax
 
 The input files can be a simple list of values:
