@@ -1,6 +1,6 @@
-# Cantemo Portal Metadata List Builder
+# Cantemo Portal and iconik Metadata List Builders
 
-This script can populate or update the values in Portal metadata fields with "choices" options.  Input files can be either flat text files with a single value (choice) per line, or a csv file where the first column are keys, second column are values.  All keys will be slugified first before being added
+These scripts can populate or update the values in Portal or iconik metadata fields with "choices" options.  Input files can be either flat text files with a single value (choice) per line, or a csv file where the first column are keys, second column are values.  All keys will be slugified first before being added
 
 ## Prerequisites
 
@@ -55,8 +55,12 @@ iconik_metadata_list_builder.py [-h] -u appId -s Auth Token -f FIELD [-a ADDRESS
 
 ### Example Syntax
 
+Portal Example
 `python ./portal_metadata_list_builder.py -p password -a 192.168.10.10 -i ~/Desktop/listfile.txt -f portal_mf257027`
+
+iconik Example
 `python ./iconik_metadata_list_builder.py -u 28de8d18-f6ed-11e7-817e-0a680a3c0121 -s eyJhbGciOiJIUzI1NiIsImlhdCI6MTUxNjM3NDc1MiwiZXhwIjozMDkzMTc0FlNy04Yzk3LTBhNTgwYTNjMDEyYSJ9.OEPy3_vJMeauW1EngQEBz3pWxQUpWvpte7Z6QozUs_w  -i ~/Desktop/listfile.txt -f Departments`
+
 ### Input file Syntax
 
 The input files can be a simple list of values:
