@@ -25,12 +25,15 @@ def parse_args():
     parser.add_argument('-a', '--address', dest='address', metavar="ADDRESS", type=str,
                         help="IP Address or DNS name of Portal server", required=True)
     parser.add_argument('-f', '--field', dest='field', metavar="FIELD", help="Portal metadata field", required=True)
-    parser.add_argument('-i', '--input-file', metavar="FILE_PATH", dest='input_file',
-                        help="Key/Value input file (line delimited values or csv key/value pairs)", required=True)
+
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('-i', '--input-file', metavar="INPUT_FILE_PATH", dest='input_file',
+                        help="Key/Value input file (line delimited values or csv key/value pairs)")
+    group.add_argument('-e', '--export-file', metavar="OUTPUT_FILE_PATH", dest='output_file',
+                       help='Key/Value output file (csv file)')
+
     parser.add_argument('--debug', action='store_true')
     return parser.parse_args()
-
-
 
 
 def slugify(s):
@@ -71,6 +74,12 @@ def get_lookup_values(fieldname, session):
         return r.json()['field']
     except:
         return []
+
+
+def write_file_values(output_file, values):
+    with open(output_file, 'w') as csvfile:
+        csvwriter = csv.DictWriter(csvfile, fieldnames=['key', 'value'], delimiter=',', quotechar='"')
+        csvwriter.writerows(values)
 
 
 def get_file_values(input_file):
@@ -137,45 +146,56 @@ def main():
     field_data = get_field_data(cli_args.field, session)
     field_document = get_field_document(cli_args.field, session)
 
+    #import ipdb; ipdb.set_trace()
+
     # check if our initial call returned good data
     if field_data != None:
         # check if our field is an acceptable field
         if field_data['type'] in safe_field_types:
             # check what type of field and process
             if field_data['type'] != 'lookup':
-                # get back options for non lookup fields
-                new_values = get_file_values(cli_args.input_file) + field_data['values']
-                # add existing values to new text file values, sort, and remove duplicates
-                sorted_set = [dict(t) for t in set([tuple(sorted(d.items())) for d in new_values])]
-                # format data for posting back
-                field_data['values'] = sorted_set
-                # find our extradata index in the data object
-                extradata_index = next(index for (index, d) in enumerate(field_document['data']) if d['key'] == 'extradata')
-                # update that index's value with our new updated field data
-                field_document['data'][extradata_index]['value'] = json.dumps(field_data)
-                # put back data to field
-                r = session.put(session.address + 'metadata-field/' + cli_args.field,
-                                 headers={'accept': 'application/json', 'content-type': 'application/json'},
-                                 data=json.dumps(field_document))
-                r.raise_for_status()
+
+                if cli_args.output_file:
+                    write_file_values(cli_args.output_file, field_data['values'])
+                else:
+                    # get back options for non lookup fields
+                    new_values = get_file_values(cli_args.input_file) + field_data['values']
+                    # add existing values to new text file values, sort, and remove duplicates
+                    sorted_set = [dict(t) for t in set([tuple(sorted(d.items())) for d in new_values])]
+                    # format data for posting back
+                    field_data['values'] = sorted_set
+                    # find our extradata index in the data object
+                    extradata_index = next(index for (index, d) in enumerate(field_document['data']) if d['key'] == 'extradata')
+                    # update that index's value with our new updated field data
+                    field_document['data'][extradata_index]['value'] = json.dumps(field_data)
+                    # put back data to field
+                    r = session.put(session.address + 'metadata-field/' + cli_args.field,
+                                     headers={'accept': 'application/json', 'content-type': 'application/json'},
+                                     data=json.dumps(field_document))
+                    r.raise_for_status()
             else:
-                # get back options for lookup fields
-                new_values = get_file_values(cli_args.input_file) + get_lookup_values(cli_args.field, session)
-                # add existing values to new text file values, sort, and remove duplicates
-                sorted_set = [dict(t) for t in set([tuple(sorted(d.items())) for d in new_values])]
-                # format data for posting back
-                lookup_data = {'field': sorted_set}
-                # format as XML since VS is broken for posting JSON right now
-                metadata_doc = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><SimpleMetadataDocument xmlns="http://xml.vidispine.com/schema/vidispine">'
-                for pair in lookup_data['field']:
-                    metadata_doc = metadata_doc + '<field><key>' + pair['key'] + '</key><value>' + pair[
-                        'value'] + '</value></field>'
-                metadata_doc = metadata_doc + '</SimpleMetadataDocument>'
-                # put back data to field
-                r = session.put(session.address + 'metadata-field/' + cli_args.field + '/values',
-                                 headers={'accept': 'application/json', 'content-type': 'application/xml'},
-                                 data=metadata_doc.encode('utf-8'))
-                r.raise_for_status()
+                existing_values = get_lookup_values(cli_args.field, session)
+
+                if cli_args.output_file:
+                    write_file_values(cli_args.output_file, existing_values)
+                else:
+                    # get back options for lookup fields
+                    new_values = get_file_values(cli_args.input_file) + existing_values
+                    # add existing values to new text file values, sort, and remove duplicates
+                    sorted_set = [dict(t) for t in set([tuple(sorted(d.items())) for d in new_values])]
+                    # format data for posting back
+                    lookup_data = {'field': sorted_set}
+                    # format as XML since VS is broken for posting JSON right now
+                    metadata_doc = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><SimpleMetadataDocument xmlns="http://xml.vidispine.com/schema/vidispine">'
+                    for pair in lookup_data['field']:
+                        metadata_doc = metadata_doc + '<field><key>' + pair['key'] + '</key><value>' + pair[
+                            'value'] + '</value></field>'
+                    metadata_doc = metadata_doc + '</SimpleMetadataDocument>'
+                    # put back data to field
+                    r = session.put(session.address + 'metadata-field/' + cli_args.field + '/values',
+                                     headers={'accept': 'application/json', 'content-type': 'application/xml'},
+                                     data=metadata_doc.encode('utf-8'))
+                    r.raise_for_status()
 
         else:
             print("Can't use this field type with this script. Exiting.")
