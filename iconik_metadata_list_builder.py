@@ -18,8 +18,14 @@ def parse_args():
     parser.add_argument('-f', '--field', dest='field', metavar="FIELD", help="iconik metadata field key", required=True)
     parser.add_argument('-a', '--address', dest='address', default='https://app.iconik.io',
                         help="iconik URL (default is https://app.iconik.io)")
-    parser.add_argument('-i', '--input-file', metavar="FILE_PATH", dest='input_file',
-                        help="Key/Value input file (line delimited values or csv key/value pairs)", required=True)
+
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('-i', '--input-file', metavar="FILE_PATH", dest='input_file',
+                        help="Key/Value input file (line delimited values or csv key/value pairs)")
+
+    group.add_argument('-o', '--output-file', metavar="OUTPUT_FILE_PATH", dest='output_file',
+                       help='Key/Value output file (csv file)')
+
     parser.add_argument('--debug', action='store_true')
     return parser.parse_args()
 
@@ -49,6 +55,12 @@ def get_field_data(fieldname, session):
     return r.json()
 
 
+def write_file_values(output_file, values):
+    with open(output_file, 'w') as csvfile:
+        csvwriter = csv.DictWriter(csvfile, fieldnames=['value', 'label'], delimiter=',', quotechar='"')
+        csvwriter.writerows(values)
+
+
 def get_file_values(input_file):
     # return json object of all key/value pairs of a field for non lookups
     if os.path.exists(input_file):
@@ -59,9 +71,9 @@ def get_file_values(input_file):
                 #  this isn't a lookup, so we formulate JSON key/value pairs
                 for row in options_obj:
                     if len(row) == 2:
-                        values.append({"label": slugify(row[0]), "value": row[1].rstrip()})
+                        values.append({"value": slugify(row[0]), "label": row[1].rstrip()})
                     elif len(row) == 1:
-                        values.append({"label": slugify(row[0]), "value": row[0].rstrip()})
+                        values.append({"value": slugify(row[0]), "label": row[0].rstrip()})
                     else:
                         print("Too many options for CSV file, should have two per line")
                         exit()
@@ -72,14 +84,6 @@ def get_file_values(input_file):
         print("File " + input_file + " doesn't exist")
         exit()
     return values
-
-
-def unicode_list(list):
-    new_list = []
-    for pair in list:
-        unidict = dict((k.decode('utf8'), v.decode('utf8')) for k, v in pair.items())
-        new_list.append(unidict)
-    return new_list
 
 
 def main():
@@ -116,16 +120,20 @@ def main():
     if field_data is not None:
         #  check if our field is an acceptable field
         if field_data['field_type'] in safe_field_types:
-            #  get back options for non lookup fields
-            new_values = get_file_values(cli_args.input_file) + field_data['options']
-            #  add existing values to new text file values, sort, and remove duplicates
-            sorted_set = [dict(t) for t in set([tuple(sorted(d.items())) for d in new_values])]
-            #  format data for posting back
-            new_field_data = {}
-            new_field_data['options'] = sorted_set
-            url = session.address + '/API/metadata/v1/fields/' + cli_args.field + '/'
-            r = session.patch(url, data=json.dumps(new_field_data))
-            r.raise_for_status()
+
+            if cli_args.output_file:
+                write_file_values(cli_args.output_file, field_data['options'])
+            else:
+                #  get back options for non lookup fields
+                new_values = get_file_values(cli_args.input_file) + field_data['options']
+                #  add existing values to new text file values, sort, and remove duplicates
+                sorted_set = [dict(t) for t in set([tuple(sorted(d.items())) for d in new_values])]
+                #  format data for posting back
+                new_field_data = {}
+                new_field_data['options'] = sorted_set
+                url = session.address + '/API/metadata/v1/fields/' + cli_args.field + '/'
+                r = session.patch(url, data=json.dumps(new_field_data))
+                r.raise_for_status()
         else:
             print("Can't use this field type with this script. Exiting.")
             exit()

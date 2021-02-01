@@ -29,7 +29,7 @@ def parse_args():
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-i', '--input-file', metavar="INPUT_FILE_PATH", dest='input_file',
                         help="Key/Value input file (line delimited values or csv key/value pairs)")
-    group.add_argument('-e', '--export-file', metavar="OUTPUT_FILE_PATH", dest='output_file',
+    group.add_argument('-o', '--output-file', metavar="OUTPUT_FILE_PATH", dest='output_file',
                        help='Key/Value output file (csv file)')
 
     parser.add_argument('--debug', action='store_true')
@@ -105,14 +105,6 @@ def get_file_values(input_file):
         print("File " + input_file + " doesn't exist")
         exit()
     return values
-
-
-def unicode_list(list):
-    new_list = []
-    for pair in list:
-        unidict = dict((k.decode('utf8'), v.decode('utf8')) for k, v in pair.items())
-        new_list.append(unidict)
-    return new_list
 
 
 def main():
