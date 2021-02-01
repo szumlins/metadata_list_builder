@@ -1,6 +1,8 @@
 from __future__ import print_function
 
 import json
+import sys
+
 import requests
 import argparse
 import csv
@@ -93,7 +95,7 @@ def get_file_values(input_file):
     else:
         print("File " + input_file + " doesn't exist")
         exit()
-    return unicode_list(values)
+    return values
 
 
 def unicode_list(list):
@@ -105,6 +107,9 @@ def unicode_list(list):
 
 
 def main():
+    if sys.version_info.major < 3:
+        print("This script requires python 3 or greater. If you are running this on a portal system, "
+              "you can use /opt/cantemo/python/bin/python")
 
     cli_args = parse_args()
 
@@ -125,12 +130,12 @@ def main():
     portal_url = 'http://' + cli_args.address + ':8080/API/'
 
     session = requests.Session()
-    session.auth(cli_args.username, cli_args.password)
+    session.auth = (cli_args.username, cli_args.password)
     session.address = portal_url
 
     # get all the data about a field
     field_data = get_field_data(cli_args.field, session)
-    field_document = get_field_document(cli_args.field)
+    field_document = get_field_document(cli_args.field, session)
 
     # check if our initial call returned good data
     if field_data != None:
@@ -155,7 +160,7 @@ def main():
                 r.raise_for_status()
             else:
                 # get back options for lookup fields
-                new_values = get_file_values(cli_args.input_file) + get_lookup_values(cli_args.field)
+                new_values = get_file_values(cli_args.input_file) + get_lookup_values(cli_args.field, session)
                 # add existing values to new text file values, sort, and remove duplicates
                 sorted_set = [dict(t) for t in set([tuple(sorted(d.items())) for d in new_values])]
                 # format data for posting back
@@ -169,7 +174,7 @@ def main():
                 # put back data to field
                 r = session.put(session.address + 'metadata-field/' + cli_args.field + '/values',
                                  headers={'accept': 'application/json', 'content-type': 'application/xml'},
-                                 data=metadata_doc)
+                                 data=metadata_doc.encode('utf-8'))
                 r.raise_for_status()
 
         else:

@@ -1,4 +1,6 @@
 import json
+import sys
+
 import requests
 import argparse
 import csv
@@ -81,6 +83,10 @@ def unicode_list(list):
 
 
 def main():
+    if sys.version_info.major < 3:
+        print("This script requires python 3 or greater. If you are running this on a portal system, "
+              "you can use /opt/cantemo/python/bin/python")
+
     cli_args = parse_args()
 
     if cli_args.debug:
